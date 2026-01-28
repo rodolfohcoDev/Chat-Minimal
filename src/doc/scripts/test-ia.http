@@ -1,0 +1,40 @@
+@baseUrl = http://localhost:5000
+@apiKey = My New API Key
+@conversationId = demo-conv-001
+
+### 1. Health Check (IA)
+GET {{baseUrl}}/api/chat/health
+Accept: application/json
+
+### 2. Perguntar à IA (Cria nova conversa se não existir)
+POST {{baseUrl}}/api/chat/task
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+    "question": "O que é arquitetura CQRS?",
+    "conversationId": "{{conversationId}}",
+    "systemPrompt": "Você é um arquiteto de software sênior. Responda de forma concisa."
+}
+
+### 3. Continuar a conversa (Mantém contexto)
+POST {{baseUrl}}/api/chat/task
+Content-Type: application/json
+X-API-KEY: {{apiKey}}
+
+{
+    "question": "Quais são as vantagens disso?",
+    "conversationId": "{{conversationId}}"
+}
+
+### 4. Obter Histórico da Conversa
+GET {{baseUrl}}/api/chat/history/{{conversationId}}?limit=10
+X-API-KEY: {{apiKey}}
+
+### 5. Limpar Conversa
+DELETE {{baseUrl}}/api/chat/history/{{conversationId}}
+X-API-KEY: {{apiKey}}
+
+### 6. Verificar Histórico Limpo (Deve retornar 404 ou vazio)
+GET {{baseUrl}}/api/chat/history/{{conversationId}}
+X-API-KEY: {{apiKey}}

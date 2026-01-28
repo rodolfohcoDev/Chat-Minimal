@@ -1,0 +1,5 @@
+{
+    "question": "Olá! Você está funcionando corretamente no Docker?",
+    "conversationId": "docker-test-01",
+    "systemPrompt": "Seja breve e amigável"
+}

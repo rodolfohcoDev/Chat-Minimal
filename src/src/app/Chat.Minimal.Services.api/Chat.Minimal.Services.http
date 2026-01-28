@@ -1,0 +1,6 @@
+@Chat.Minimal.Services_HostAddress = http://localhost:5120
+
+GET {{Chat.Minimal.Services_HostAddress}}/Swagger/
+Accept: application/json
+
+###

@@ -1,0 +1,16 @@
+**/*.md
+**/bin/
+**/obj/
+**/out/
+**/.vs/
+**/.vscode/
+**/*.user
+**/*.suo
+**/.git/
+**/.gitignore
+**/TestResults/
+**/*.trx
+**/.dockerignore
+**/Dockerfile
+**/docker-compose*.yml
+**/models/
