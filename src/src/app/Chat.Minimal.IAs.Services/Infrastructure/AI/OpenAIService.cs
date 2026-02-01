@@ -34,6 +34,7 @@ public class OpenAIService : ILlmService
             _logger.LogWarning("OpenAI API Key não configurada!");
         }
 
+        // Para Groq: usar a API key do Groq e configurar via variável de ambiente OPENAI_API_BASE
         var provider = new OpenAiProvider(_aiSettings.OpenAIApiKey);
         _model = new OpenAiChatModel(provider, _aiSettings.OpenAIModelName);
     }

@@ -1,8 +1,8 @@
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ./src/app
+      dockerfile: Chat.Minimal.Services.api/Dockerfile
     container_name: chat-minimal-api
     restart: always
     ports:
@@ -10,10 +10,16 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=chatminimaldb;User=chatuser;Password=chatpassword!@#
-      - AISettings__Provider=LlamaSharp
-      - GgufModelSettings__ModelPath=/models/Llama-3.2-3B-Instruct-Q6_K.gguf
-    volumes:
-      - ./src/Chat.Minimal.Services/models:/models # Mount models directory
+      - AISettings__Provider=Groq
+      - AISettings__OpenAIApiKey=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
+      - AISettings__OpenAIModelName=llama-3.3-70b-versatile
+      - AISettings__OpenAIBaseUrl=https://api.groq.com/openai/v1
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
     depends_on:
       db:
         condition: service_healthy
@@ -27,9 +33,8 @@ services:
       MYSQL_DATABASE: chatminimaldb
       MYSQL_USER: chatuser
       MYSQL_PASSWORD: chatpassword!@#
-      MYSQL_TCP_PORT: 3309
     ports:
-      - "3309:3309" # Mapeia porta 3309 do container para 3309 do host
+      - "3309:3306" # Mapeia porta 3306 do container para 3309 do host
     volumes:
       - mysql_data:/var/lib/mysql
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql

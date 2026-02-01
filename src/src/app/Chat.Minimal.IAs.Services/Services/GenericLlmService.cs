@@ -22,6 +22,9 @@ public class GenericLlmService : ILlmService
             case AIProvider.OpenAI:
                 _service = serviceProvider.GetRequiredService<Chat.Minimal.IAs.Services.Infrastructure.AI.OpenAIService>();
                 break;
+            case AIProvider.Groq:
+                _service = serviceProvider.GetRequiredService<Chat.Minimal.IAs.Services.Infrastructure.AI.GroqService>();
+                break;
             case AIProvider.LlamaSharp:
             default:
                 _service = serviceProvider.GetRequiredService<Chat.Minimal.IAs.Services.Infrastructure.AI.LlamaSharpService>();

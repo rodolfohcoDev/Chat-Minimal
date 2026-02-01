@@ -13,4 +13,3 @@
 **/.dockerignore
 **/Dockerfile
 **/docker-compose*.yml
-**/models/

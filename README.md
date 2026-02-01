@@ -10,6 +10,31 @@ API Web ASP.NET Core 10 usando Minimal APIs com arquitetura DDD (Domain-Driven D
 - **MySQL 8.0** (via Pomelo.EntityFrameworkCore.MySql)
 - **ASP.NET Core Identity**
 - **Docker & Docker Compose**
+- **LLamaSharp / LangChain** (Integração com IA)
+
+## ⚡ Início Rápido
+
+```bash
+# 1. Iniciar banco de dados
+cd src && docker-compose up -d db
+
+# 2. Aplicar migrations
+cd src/app/Chat.Minimal.Services.api
+dotnet tool restore
+dotnet ef database update
+
+# 3. Criar usuário de teste (opcional)
+cd ../../../
+docker exec -i chat-minimal-db mysql -uchatuser -p'chatpassword!@#' chatminimaldb < doc/scripts/temp_seed.sql
+
+# 4. Iniciar aplicação
+docker-compose up -d
+# OU executar localmente: cd src/app/Chat.Minimal.Services.api && dotnet run
+
+# 5. Acessar: http://localhost:5120 (Docker) ou http://localhost:5000 (Local)
+```
+
+**API Key de Teste:** `apikey-12345678901234567890123456789012`
 
 ## 📁 Estrutura do Projeto (DDD)
 
@@ -45,54 +70,106 @@ src/Chat.Minimal.Services/
 - Revogação de API Keys
 - Suporte a data de expiração
 
-## 🛠️ Configuração
+## 🛠️ Configuração e Execução
 
 ### Pré-requisitos
-- .NET 10 SDK
-- Docker e Docker Compose (opcional)
-- MySQL 8.0 (se não usar Docker)
+- .NET 9 SDK
+- Docker e Docker Compose
+- MySQL 8.0 (gerenciado via Docker)
 
-### Configuração do Banco de Dados
+### 🚀 Início Rápido (Recomendado)
 
-Edite `appsettings.json` com suas credenciais MySQL:
+#### 1. Iniciar o Banco de Dados MySQL
 
+```bash
+cd src
+docker-compose up -d db
+```
+
+Aguarde alguns segundos para o MySQL inicializar completamente.
+
+#### 2. Aplicar Migrations do Banco de Dados
+
+```bash
+cd src/app/Chat.Minimal.Services.api
+
+# Restaurar ferramentas do .NET
+dotnet tool restore
+
+# Aplicar migrations
+dotnet ef database update
+```
+
+Isso criará todas as tabelas necessárias:
+- `AspNetUsers`, `AspNetRoles`, `AspNetUserRoles`, etc. (Identity)
+- `ApiKeys` (autenticação)
+- `Messages` (histórico de chat)
+
+#### 3. Criar Usuário Base (Opcional)
+
+Execute o script de seed para criar um usuário de teste:
+
+```bash
+cd ../../../  # Voltar para o diretório src
+docker exec -i chat-minimal-db mysql -uchatuser -p'chatpassword!@#' chatminimaldb < doc/scripts/temp_seed.sql
+```
+
+Isso criará:
+- **Usuário:** `rodolfohco` (rodolfohco@hotmail.com)
+- **API Key:** `apikey-12345678901234567890123456789012`
+
+#### 4. Executar a Aplicação
+
+**Opção A: Via Docker Compose (Produção)**
+
+```bash
+cd src
+docker-compose up -d
+```
+
+A API estará disponível em: `http://localhost:5120`
+
+**Opção B: Localmente (Desenvolvimento)**
+
+```bash
+cd src/app/Chat.Minimal.Services.api
+dotnet run
+```
+
+A API estará disponível em: `http://localhost:5000` (ou confira a porta no console)
+
+#### 5. Acessar a Documentação Swagger
+
+Abra no navegador:
+- **Docker:** `http://localhost:5120/`
+- **Local:** `http://localhost:5000/`
+
+### 🔧 Configuração Manual
+
+Se preferir configurar manualmente, edite os arquivos de configuração:
+
+**appsettings.Development.json:**
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Port=3306;Database=chatminimaldb;User=root;Password=yourpassword;"
+    "DefaultConnection": "Server=localhost;Port=3309;Database=chatminimaldb;User=chatuser;Password=chatpassword!@#"
   }
 }
 ```
 
-### Executar com Docker Compose (Recomendado)
+**docker-compose.yml:**
+- MySQL roda na porta `3309` (mapeada para `3309` no host)
+- API roda na porta `5120` (mapeada de `8080` no container)
+
+### 🛑 Parar os Serviços
 
 ```bash
-# Iniciar todos os serviços (MySQL + API)
-docker-compose up -d
-
-# Visualizar logs
-docker-compose logs -f api
-
-# Parar todos os serviços
+cd src
 docker-compose down
+
+# Para remover volumes (apaga dados do banco)
+docker-compose down -v
 ```
-
-A API estará disponível em: `http://localhost:8080`
-
-### Executar Localmente
-
-```bash
-# Restaurar dependências
-dotnet restore
-
-# Aplicar migrations
-dotnet ef database update --project src/Chat.Minimal.Services
-
-# Executar aplicação
-dotnet run --project src/Chat.Minimal.Services
-```
-
-A API estará disponível em: `https://localhost:5001` ou `http://localhost:5000`
 
 ## 📚 Endpoints da API
 
@@ -123,48 +200,64 @@ A API estará disponível em: `https://localhost:5001` ou `http://localhost:5000
 
 ## 🔐 Autenticação
 
-### 1. Registrar Usuário
+### Usando a API Key de Teste
+
+Se você executou o script de seed (passo 3), já possui uma API Key pronta para uso:
 
 ```bash
-curl -X POST http://localhost:8080/api/users/register \
+# Testar autenticação
+curl -X GET http://localhost:5120/health \
+  -H "X-API-Key: apikey-12345678901234567890123456789012"
+```
+
+### 1. Registrar Novo Usuário
+
+```bash
+curl -X POST http://localhost:5120/api/users/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "user@example.com",
+    "email": "novousuario@example.com",
     "password": "Password123!",
-    "userName": "testuser"
+    "userName": "novousuario"
   }'
 ```
 
 ### 2. Fazer Login
 
 ```bash
-curl -X POST http://localhost:8080/api/users/login \
+curl -X POST http://localhost:5120/api/users/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "user@example.com",
+    "email": "rodolfohco@hotmail.com",
     "password": "Password123!"
   }'
 ```
 
-### 3. Gerar API Key
+### 3. Gerar Nova API Key
 
-Primeiro, você precisa de uma API Key existente ou criar uma manualmente no banco de dados. Depois:
+Use a API Key existente para gerar novas:
 
 ```bash
-curl -X POST http://localhost:8080/api/apikeys \
+curl -X POST http://localhost:5120/api/apikeys \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: YOUR_EXISTING_API_KEY" \
+  -H "X-API-Key: apikey-12345678901234567890123456789012" \
   -d '{
-    "name": "My API Key",
-    "expiresAt": "2025-12-31T23:59:59Z"
+    "name": "Minha Nova API Key",
+    "expiresAt": "2027-12-31T23:59:59Z"
   }'
 ```
 
-### 4. Usar API Key
+### 4. Listar API Keys do Usuário
 
 ```bash
-curl -X GET http://localhost:8080/api/users/{userId} \
-  -H "X-API-Key: YOUR_API_KEY"
+curl -X GET http://localhost:5120/api/apikeys \
+  -H "X-API-Key: apikey-12345678901234567890123456789012"
+```
+
+### 5. Validar API Key
+
+```bash
+curl -X GET "http://localhost:5120/api/apikeys/validate?key=apikey-12345678901234567890123456789012"
 ```
 
 ## 🧪 Testes
@@ -204,19 +297,92 @@ O `docker-compose.yml` configura:
 ### Adicionar Nova Migration
 
 ```bash
-dotnet ef migrations add MigrationName --project src/Chat.Minimal.Services
+cd src/app/Chat.Minimal.Services.api
+dotnet ef migrations add MigrationName
 ```
 
 ### Reverter Migration
 
 ```bash
-dotnet ef migrations remove --project src/Chat.Minimal.Services
+cd src/app/Chat.Minimal.Services.api
+dotnet ef migrations remove
 ```
 
 ### Atualizar Banco de Dados
 
 ```bash
-dotnet ef database update --project src/Chat.Minimal.Services
+cd src/app/Chat.Minimal.Services.api
+dotnet ef database update
+```
+
+### Gerar Script SQL da Migration
+
+```bash
+cd src/app/Chat.Minimal.Services.api
+dotnet ef migrations script --output migration.sql
+```
+
+## ⚠️ Informações Importantes
+
+### Portas Utilizadas
+- **MySQL:** `3309` (host) → `3309` (container)
+- **API (Docker):** `5120` (host) → `8080` (container)
+- **API (Local):** `5000` ou `5001`
+
+### Credenciais Padrão
+- **MySQL Root:** `rootpassword`
+- **MySQL User:** `chatuser` / `chatpassword!@#`
+- **API Key de Teste:** `apikey-12345678901234567890123456789012`
+
+### Estrutura de Diretórios Atualizada
+```
+Chat-Minimal/
+├── src/
+│   ├── src/
+│   │   └── app/
+│   │       ├── Chat.Minimal.Services.api/    # API principal
+│   │       └── Chat.Minimal.IAs.Services/    # Serviços de IA
+│   ├── doc/
+│   │   └── scripts/                          # Scripts SQL
+│   └── docker-compose.yml
+└── README.md
+```
+
+## 🐛 Troubleshooting
+
+### Erro: "Unable to connect to any of the specified MySQL hosts"
+**Solução:** Verifique se o container MySQL está rodando:
+```bash
+docker ps | grep chat-minimal-db
+```
+
+Se não estiver rodando, inicie-o:
+```bash
+cd src
+docker-compose up -d db
+```
+
+### Erro: "Access denied for user 'chatuser'"
+**Solução:** Recrie o usuário no MySQL:
+```bash
+docker exec chat-minimal-db mysql -uroot -prootpassword -e "DROP USER IF EXISTS 'chatuser'@'%'; CREATE USER 'chatuser'@'%' IDENTIFIED WITH mysql_native_password BY 'chatpassword!@#'; GRANT ALL PRIVILEGES ON chatminimaldb.* TO 'chatuser'@'%'; FLUSH PRIVILEGES;"
+```
+
+### Erro: "dotnet-ef command not found"
+**Solução:** Restaure as ferramentas do .NET:
+```bash
+cd src/app/Chat.Minimal.Services.api
+dotnet tool restore
+```
+
+### Porta 3309 ou 5120 já em uso
+**Solução:** Altere as portas no `docker-compose.yml` ou pare o serviço que está usando a porta.
+
+### Migrations não aplicadas
+**Solução:** Verifique se você está no diretório correto e execute:
+```bash
+cd src/app/Chat.Minimal.Services.api
+dotnet ef database update
 ```
 
 ## 📝 Licença

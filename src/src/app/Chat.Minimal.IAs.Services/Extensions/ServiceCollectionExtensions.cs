@@ -26,6 +26,9 @@ public static class ServiceCollectionExtensions
         services.Configure<ConversationSettings>(configuration.GetSection("ConversationSettings"));
         services.Configure<AISettings>(configuration.GetSection("AISettings"));
 
+        // HttpClientFactory para Groq
+        services.AddHttpClient();
+
         // 2. Infraestrutura
         services.AddSingleton<IConversationMemory, InMemoryConversationStore>();
 
@@ -33,6 +36,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<LlamaSharpService>(); // Singleton (modelo pesado)
         services.AddScoped<LangChainService>();     // Scoped (leve)
         services.AddScoped<OpenAIService>();        // Scoped (leve)
+        services.AddScoped<GroqService>();          // Scoped (leve)
 
         // Registrar Strategy como implementação principal
         services.AddScoped<ILlmService, GenericLlmService>();
