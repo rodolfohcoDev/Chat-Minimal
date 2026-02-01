@@ -11,7 +11,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=chatminimaldb;User=chatuser;Password=chatpassword!@#
       - AISettings__Provider=Groq
-      - AISettings__OpenAIApiKey=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
+      - AISettings__OpenAIApiKey=
       - AISettings__OpenAIModelName=llama-3.3-70b-versatile
       - AISettings__OpenAIBaseUrl=https://api.groq.com/openai/v1
     deploy:
