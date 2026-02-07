@@ -19,9 +19,9 @@ builder.Services.AddAuthorization(); // Registrar Authorization
 builder.Services.AddAuthentication(); // Registrar Authentication
 
 // Configuração do DbContext
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Server=localhost;Database=test;User=root;Password=root";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36))));
+    options.UseSqlServer(connectionString));
 
 // Configure Identity
 builder.Services.AddIdentity<User, IdentityRole>(options =>
