@@ -1,4 +1,6 @@
 using Chat.Minimal.Services.Application.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Chat.Minimal.Services.Domain.Entities;
 
 namespace Chat.Minimal.Services.Api.Middleware;
 
@@ -12,7 +14,10 @@ public class ApiKeyAuthenticationMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IApiKeyService apiKeyService)
+    public async Task InvokeAsync(
+        HttpContext context, 
+        IApiKeyService apiKeyService,
+        UserManager<User> userManager)
     {
         // Skip API key validation for certain endpoints
         var path = context.Request.Path.Value?.ToLower() ?? "";
@@ -44,18 +49,28 @@ public class ApiKeyAuthenticationMiddleware
             return;
         }
 
-        // Get user ID from API key and add to context
+        // Get user ID from API key
         var userId = await apiKeyService.GetUserIdByApiKeyAsync(extractedApiKey!);
 
         if (userId != null)
         {
-            // Criar ClaimsIdentity e Principal
-            var claims = new[]
+            var claims = new List<System.Security.Claims.Claim>
             {
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, userId.ToString()),
                 new System.Security.Claims.Claim("ApiKey", extractedApiKey!),
                 new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, "API User")
             };
+
+            // Carregar roles do usuário
+            var user = await userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                var roles = await userManager.GetRolesAsync(user);
+                foreach (var role in roles)
+                {
+                    claims.Add(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
+                }
+            }
 
             var identity = new System.Security.Claims.ClaimsIdentity(claims, "ApiKey");
             context.User = new System.Security.Claims.ClaimsPrincipal(identity);
