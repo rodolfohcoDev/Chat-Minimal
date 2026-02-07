@@ -134,34 +134,35 @@ Headers:
   Content-Type: application/json
 Body:
 {
-  "question": "Olá, como você está?",
-  "conversationId": "test-conv-001"
+  "question": "Qual é a capital do Brasil?",
+  "conversationId": "final-test-001"
 }
 ```
 
 **Response:**
 ```json
 {
-  "answerId": "64abcd61-e67b-42b6-8604-83fb171d8dc9",
-  "conversationId": "test-conv-001",
-  "question": "Olá, como você está?",
-  "answer": "...",
-  "timestamp": "2026-02-07T14:12:57.9921562Z",
-  "processingTimeMs": 311.3884,
-  "inputTokens": 5,
-  "outputTokens": 24,
-  "totalTokens": 29,
-  "model": "llama-3.3-70b-versatile",
+  "answerId": "22c604cb-13d3-4e23-9631-3cd024b76ab5",
+  "conversationId": "final-test-001",
+  "question": "Qual é a capital do Brasil?",
+  "answer": "A capital do Brasil é Brasília. Fico feliz em poder responder a essa pergunta simples e direta!...",
+  "timestamp": "2026-02-07T14:58:56.6335459Z",
+  "processingTimeMs": 1911.5002,
+  "inputTokens": 7,
+  "outputTokens": 68,
+  "totalTokens": 75,
+  "model": "llama-3.1-8b-instant",
   "provider": "Groq"
 }
 ```
 
 **Resultados:**
-- ✅ Resposta gerada com sucesso
-- ✅ Tokens contabilizados: 5 input + 24 output = 29 total
-- ✅ Duração: ~311ms
+- ✅ Resposta gerada com sucesso (Código 200 OK)
+- ✅ Tokens contabilizados: 7 input + 68 output = 75 total
+- ✅ Duração: ~1.9s
 - ✅ Log salvo no banco de dados
 - ✅ Contador de uso atualizado
+- ✅ Modelo `llama-3.1-8b-instant` utilizado com sucesso (após ajuste de permissões)
 
 ---
 
