@@ -80,6 +80,7 @@ public class LlamaSharpService : ILlmService, IDisposable
         string conversationId,
         string question,
         string? systemPrompt = null,
+        Chat.Minimal.IAs.Services.DTOs.AiProviderConfig? config = null,
         CancellationToken cancellationToken = default)
     {
         if (_model == null || _context == null)

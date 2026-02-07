@@ -30,18 +30,22 @@ public class GroqService : ILlmService
         _logger = logger;
         _httpClient = httpClientFactory.CreateClient();
         // Não definir BaseAddress, usar URL completa no PostAsync
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _aiSettings.OpenAIApiKey);
+        // _httpClient.DefaultRequestHeaders.Authorization será definido por request
     }
 
     public async Task<string> GenerateResponseAsync(
         string conversationId,
         string question,
         string? systemPrompt = null,
+        Chat.Minimal.IAs.Services.DTOs.AiProviderConfig? config = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
+            var apiKey = config?.ApiKey ?? _aiSettings.OpenAIApiKey;
+            var model = config?.Model ?? _aiSettings.OpenAIModelName;
+            var baseUrl = config?.BaseUrl ?? _aiSettings.OpenAIBaseUrl;
+
             var conversation = await _memory.GetConversationAsync(conversationId);
             if (conversation == null) conversation = new Conversation(conversationId);
 
@@ -49,7 +53,7 @@ public class GroqService : ILlmService
 
             var requestBody = new
             {
-                model = _aiSettings.OpenAIModelName,
+                model = model,
                 messages = messages,
                 temperature = 0.7,
                 max_tokens = 512
@@ -60,9 +64,14 @@ public class GroqService : ILlmService
                 Encoding.UTF8,
                 "application/json");
 
-            var url = $"{_aiSettings.OpenAIBaseUrl}/chat/completions";
+            var url = $"{baseUrl}/chat/completions";
             _logger.LogInformation("Groq API URL: {Url}", url);
-            var response = await _httpClient.PostAsync(url, content, cancellationToken);
+            
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Post, url);
+            requestMessage.Content = content;
+            requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            
+            var response = await _httpClient.SendAsync(requestMessage, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);

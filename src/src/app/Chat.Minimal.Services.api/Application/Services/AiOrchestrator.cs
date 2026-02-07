@@ -71,11 +71,21 @@ public class AiOrchestrator : IAiOrchestrator
             };
             var requestContent = JsonSerializer.Serialize(requestData);
 
-            // 5. Chamar o serviço de IA
+            // 5. Preparar configuração do provedor
+            var providerConfig = new Chat.Minimal.IAs.Services.DTOs.AiProviderConfig
+            {
+                Provider = config.Provider,
+                Model = config.Model,
+                ApiKey = config.ApiKey,
+                BaseUrl = config.BaseUrl
+            };
+
+            // 6. Chamar o serviço de IA
             var response = await _llmService.GenerateResponseAsync(
                 conversationId,
                 question,
                 systemPrompt,
+                providerConfig,
                 cancellationToken);
 
             stopwatch.Stop();

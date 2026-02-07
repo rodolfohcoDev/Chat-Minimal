@@ -32,7 +32,8 @@ public class AskQuestionCommandHandler : ICommandHandler<AskQuestionCommand, Ans
             command.ConversationId,
             command.Question,
             command.SystemPrompt,
-            cancellationToken
+            config: null,
+            cancellationToken: cancellationToken
         );
 
         // 3. Salvar resposta

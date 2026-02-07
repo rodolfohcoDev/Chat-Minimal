@@ -6,5 +6,6 @@ public interface ILlmService
         string conversationId,
         string question,
         string? systemPrompt = null,
+        Chat.Minimal.IAs.Services.DTOs.AiProviderConfig? config = null,
         CancellationToken cancellationToken = default);
 }
