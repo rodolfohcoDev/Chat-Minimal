@@ -64,6 +64,9 @@ builder.Services.AddIAServices(builder.Configuration);
 // ⭐ Substituir InMemory por Banco de Dados SQL Server
 builder.Services.AddScoped<Chat.Minimal.IAs.Services.Domain.Interfaces.IConversationMemory, Chat.Minimal.Services.Infrastructure.AI.EfConversationMemory>();
 
+// ⭐ Substituir handler padrão pelo handler com orquestrador (validação + logging)
+builder.Services.AddScoped<Chat.Minimal.IAs.Services.CQRS.Handlers.ICommandHandler<Chat.Minimal.IAs.Services.CQRS.Commands.AskQuestionCommand, Chat.Minimal.IAs.Services.DTOs.AnswerDto>, Chat.Minimal.Services.Application.Handlers.AskQuestionWithOrchestratorHandler>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
