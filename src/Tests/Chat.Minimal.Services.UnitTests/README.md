@@ -15,7 +15,13 @@ Os testes cobrem os componentes críticos do sistema com foco em:
 2.  **GroqService**: Integração com o provedor de IA.
     - Uso correto de configurações dinâmicas (API Key do banco).
     - Fallback para configurações estáticas (appsettings).
+    - Fallback para configurações estáticas (appsettings).
     - Tratamento de erros de comunicação HTTP.
+
+3.  **Command Handlers**: Lógica de aplicação (CQRS).
+    - `AskQuestionWithOrchestratorHandler`: Orquestração entre persistência e serviço de IA.
+    - Validação de fluxo (salvar pergunta -> gerar -> salvar resposta).
+    - Tratamento de exceções e integridade dos dados.
 
 ## Tecnologias Utilizadas
 
