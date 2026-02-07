@@ -71,7 +71,14 @@ public class AiOrchestratorTests : IDisposable
                 It.IsAny<string>(),
                 It.IsAny<AiProviderConfig>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedResponse);
+            .ReturnsAsync(new Chat.Minimal.IAs.Services.DTOs.ProviderResponse 
+            { 
+                Content = expectedResponse, 
+                IsSuccess = true, 
+                StatusCode = 200,
+                InputTokens = 10,
+                OutputTokens = 5
+            });
 
         // Act
         var result = await _orchestrator.GenerateResponseAsync("conv-1", "Qual é a capital?", "user-1");

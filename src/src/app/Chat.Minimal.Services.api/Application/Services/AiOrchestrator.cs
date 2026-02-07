@@ -33,8 +33,7 @@ public class AiOrchestrator : IAiOrchestrator
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        AiConfig? config = null;
-        AiInteractionLog log = new();
+        Chat.Minimal.Services.Domain.Entities.AiConfig? config = null;
 
         try
         {
@@ -80,7 +79,7 @@ public class AiOrchestrator : IAiOrchestrator
                 BaseUrl = config.BaseUrl
             };
 
-            // 6. Chamar o serviço de IA
+            // 6. Chamar o serviço de IA (Agora retorna ProviderResponse)
             var response = await _llmService.GenerateResponseAsync(
                 conversationId,
                 question,
@@ -90,32 +89,43 @@ public class AiOrchestrator : IAiOrchestrator
 
             stopwatch.Stop();
 
-            // 6. Estimar tokens (simplificado - em produção usar tokenizer real ou resposta da API)
-            var inputTokens = EstimateTokens(question + (systemPrompt ?? ""));
-            var outputTokens = EstimateTokens(response);
+            // 7. Calcular tokens
+            var inputTokens = response.InputTokens > 0 ? response.InputTokens : EstimateTokens(question + (systemPrompt ?? ""));
+            var outputTokens = response.OutputTokens > 0 ? response.OutputTokens : EstimateTokens(response.Content);
             var totalTokens = inputTokens + outputTokens;
 
-            // 7. Atualizar uso
-            config.TokensUsed += totalTokens;
-            config.UpdatedAt = DateTime.UtcNow;
+            // 8. Atualizar uso (apenas se sucesso)
+            if (response.IsSuccess)
+            {
+                config.TokensUsed += totalTokens;
+                config.UpdatedAt = DateTime.UtcNow;
+            }
 
-            // 8. Criar log de sucesso
-            log = new AiInteractionLog
+            // 9. Criar log (Sucesso ou Falha do Provedor)
+            var log = new Chat.Minimal.Services.Domain.Entities.AiInteractionLog
             {
                 AiConfigId = config.Id,
                 ConversationId = conversationId,
                 UserId = userId,
                 RequestContent = requestContent,
-                ResponseContent = response,
+                ResponseContent = response.Content, // Salva resposta ou erro JSON do provedor
                 InputTokens = inputTokens,
                 OutputTokens = outputTokens,
                 DurationMs = stopwatch.Elapsed.TotalMilliseconds,
-                Status = "Success",
+                Status = response.IsSuccess ? "Success" : "Error",
+                StatusCode = response.StatusCode, // Novo campo
+                ErrorMessage = response.ErrorMessage,
                 Timestamp = DateTime.UtcNow
             };
 
             _context.AiInteractionLogs.Add(log);
             await _context.SaveChangesAsync(cancellationToken);
+
+            if (!response.IsSuccess)
+            {
+                // Lança exceção para o handler, mas já logou no banco
+                throw new InvalidOperationException($"Erro no provedor de IA ({response.StatusCode}): {response.ErrorMessage}");
+            }
 
             _logger.LogInformation(
                 "AI response generated successfully. Config: {ConfigName}, Tokens: {Tokens}, Duration: {Duration}ms",
@@ -123,7 +133,7 @@ public class AiOrchestrator : IAiOrchestrator
 
             return new LlmResponse
             {
-                Content = response,
+                Content = response.Content,
                 InputTokens = inputTokens,
                 OutputTokens = outputTokens,
                 Model = config.Model,
@@ -133,29 +143,37 @@ public class AiOrchestrator : IAiOrchestrator
         catch (Exception ex)
         {
             stopwatch.Stop();
-
             _logger.LogError(ex, "Error generating AI response for conversation {ConversationId}", conversationId);
 
-            // Log de erro
-            if (config != null)
+            // Log de erro para falhas ANTES de chamar o provedor (ex: validação, banco de dados)
+            // Se log já foi salvo acima (no fluxo de provider error), não salva de novo se ex for a que lançamos
+            // Mas como estamos dentro do try, se lançarmos exceção, cai aqui? Sim.
+
+            // Verificar se é uma exceção que já tratamos e logamos (InvalidOperationException do provider)
+            // Se for do provider, já salvamos o log.
+            // Mas InvalidOperationException é generica.
+
+            // Melhor abordagem: se a falha ocorrer antes de chamar o serviço, config pode ser nulo.
+            if (config != null && !ex.Message.StartsWith("Erro no provedor de IA")) 
             {
-                log = new AiInteractionLog
+                // Verifica se já não existe tracking? Não dá pra saber facil com EF tracking sem checkar Local
+                // Simplesmente adicionamos um log de "System Error"
+                var errorLog = new Chat.Minimal.Services.Domain.Entities.AiInteractionLog
                 {
                     AiConfigId = config.Id,
                     ConversationId = conversationId,
                     UserId = userId,
                     RequestContent = question,
                     ResponseContent = string.Empty,
-                    InputTokens = 0,
-                    OutputTokens = 0,
                     DurationMs = stopwatch.Elapsed.TotalMilliseconds,
-                    Status = "Error",
+                    Status = "SystemError",
+                    StatusCode = 500,
                     ErrorMessage = ex.Message,
                     Timestamp = DateTime.UtcNow
                 };
-
-                _context.AiInteractionLogs.Add(log);
-                await _context.SaveChangesAsync(cancellationToken);
+                 _context.AiInteractionLogs.Add(errorLog);
+                 // Ignorar erro ao salvar log de erro
+                 try { await _context.SaveChangesAsync(cancellationToken); } catch { }
             }
 
             throw;

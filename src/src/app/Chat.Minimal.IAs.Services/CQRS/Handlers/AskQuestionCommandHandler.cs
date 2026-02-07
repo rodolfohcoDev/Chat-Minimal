@@ -28,13 +28,21 @@ public class AskQuestionCommandHandler : ICommandHandler<AskQuestionCommand, Ans
         await _conversationService.AddQuestionAsync(command.ConversationId, command.Question);
 
         // 2. Gerar resposta
-        var answerText = await _llmService.GenerateResponseAsync(
+        // 2. Gerar resposta
+        var response = await _llmService.GenerateResponseAsync(
             command.ConversationId,
             command.Question,
             command.SystemPrompt,
             config: null,
             cancellationToken: cancellationToken
         );
+
+        if (!response.IsSuccess)
+        {
+            throw new Exception($"Erro no provedor de IA ({response.StatusCode}): {response.ErrorMessage}");
+        }
+
+        var answerText = response.Content;
 
         // 3. Salvar resposta
         await _conversationService.AddAnswerAsync(command.ConversationId, answerText);

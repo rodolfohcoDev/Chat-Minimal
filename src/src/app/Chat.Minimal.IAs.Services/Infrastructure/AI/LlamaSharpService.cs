@@ -76,7 +76,7 @@ public class LlamaSharpService : ILlmService, IDisposable
         }
     }
 
-    public async Task<string> GenerateResponseAsync(
+    public async Task<Chat.Minimal.IAs.Services.DTOs.ProviderResponse> GenerateResponseAsync(
         string conversationId,
         string question,
         string? systemPrompt = null,
@@ -86,7 +86,12 @@ public class LlamaSharpService : ILlmService, IDisposable
         if (_model == null || _context == null)
         {
             _logger.LogWarning("Tentativa de inferência sem modelo carregado (Mock Mode)");
-            return $"[MOCK] O modelo não foi carregado. Verifique se o arquivo .gguf existe em '{_config.ModelPath}'. Pergunta: {question}";
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+            {
+                Content = $"[MOCK] O modelo não foi carregado. Verifique se o arquivo .gguf existe em '{_config.ModelPath}'. Pergunta: {question}",
+                IsSuccess = false,
+                StatusCode = 503
+            };
         }
 
         await _lock.WaitAsync(cancellationToken);
@@ -115,12 +120,23 @@ public class LlamaSharpService : ILlmService, IDisposable
                 responseBuilder.Append(text);
             }
 
-            return responseBuilder.ToString().Trim();
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+            {
+                Content = responseBuilder.ToString().Trim(),
+                IsSuccess = true,
+                StatusCode = 200
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro durante inferência");
-            throw;
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+            {
+                Content = ex.Message,
+                ErrorMessage = ex.Message,
+                IsSuccess = false,
+                StatusCode = 500
+            };
         }
         finally
         {

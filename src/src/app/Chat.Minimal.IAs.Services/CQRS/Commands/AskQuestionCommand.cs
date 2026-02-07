@@ -5,5 +5,6 @@ namespace Chat.Minimal.IAs.Services.CQRS.Commands;
 public record AskQuestionCommand(
     string ConversationId,
     string Question,
-    string? SystemPrompt = null
+    string? SystemPrompt = null,
+    string? UserId = null
 ) : ICommand<AnswerDto>;

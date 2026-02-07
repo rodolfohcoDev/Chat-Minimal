@@ -39,7 +39,7 @@ public class AskQuestionWithOrchestratorHandler : ICommandHandler<AskQuestionCom
             var llmResponse = await _aiOrchestrator.GenerateResponseAsync(
                 command.ConversationId,
                 command.Question,
-                userId: null, // TODO: Extrair do contexto HTTP se necessário
+                userId: command.UserId,
                 command.SystemPrompt,
                 cancellationToken
             );

@@ -39,7 +39,7 @@ public class OpenAIService : ILlmService
         _model = new OpenAiChatModel(provider, _aiSettings.OpenAIModelName);
     }
 
-    public async Task<string> GenerateResponseAsync(
+    public async Task<Chat.Minimal.IAs.Services.DTOs.ProviderResponse> GenerateResponseAsync(
         string conversationId,
         string question,
         string? systemPrompt = null,
@@ -56,12 +56,23 @@ public class OpenAIService : ILlmService
                 new ChatRequest { Messages = messages },
                 cancellationToken: cancellationToken);
 
-            return response.Messages.Last().Content;
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse 
+            { 
+               Content = response.Messages.Last().Content,
+               IsSuccess = true,
+               StatusCode = 200
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao gerar resposta com OpenAI");
-            return $"Erro ao conectar com OpenAI: {ex.Message}";
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+            {
+                IsSuccess = false,
+                StatusCode = 500,
+                ErrorMessage = ex.Message,
+                Content = ex.Message
+            };
         }
     }
 

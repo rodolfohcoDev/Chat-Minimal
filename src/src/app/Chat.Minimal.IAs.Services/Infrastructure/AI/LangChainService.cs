@@ -33,7 +33,7 @@ public class LangChainService : ILlmService
         _model = new OllamaChatModel(provider, _aiSettings.OllamaModelName);
     }
 
-    public async Task<string> GenerateResponseAsync(
+    public async Task<Chat.Minimal.IAs.Services.DTOs.ProviderResponse> GenerateResponseAsync(
         string conversationId,
         string question,
         string? systemPrompt = null,
@@ -50,14 +50,25 @@ public class LangChainService : ILlmService
                 new ChatRequest { Messages = messages },
                 cancellationToken: cancellationToken);
 
-            return response.Messages.Last().Content;
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse 
+            { 
+               Content = response.Messages.Last().Content,
+               IsSuccess = true,
+               StatusCode = 200
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao gerar resposta com LangChain/Ollama");
 
             // Fallback amigável ou re-throw
-            return $"Erro ao conectar com Ollama ({_aiSettings.OllamaBaseUrl}): {ex.Message}";
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+            {
+                IsSuccess = false,
+                StatusCode = 500,
+                ErrorMessage = ex.Message,
+                Content = ex.Message
+            };
         }
     }
 

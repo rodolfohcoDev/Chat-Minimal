@@ -32,7 +32,7 @@ public class GenericLlmService : ILlmService
         }
     }
 
-    public Task<string> GenerateResponseAsync(string conversationId, string question, string? systemPrompt = null, Chat.Minimal.IAs.Services.DTOs.AiProviderConfig? config = null, CancellationToken cancellationToken = default)
+    public Task<Chat.Minimal.IAs.Services.DTOs.ProviderResponse> GenerateResponseAsync(string conversationId, string question, string? systemPrompt = null, Chat.Minimal.IAs.Services.DTOs.AiProviderConfig? config = null, CancellationToken cancellationToken = default)
     {
         return _service.GenerateResponseAsync(conversationId, question, systemPrompt, config, cancellationToken);
     }

@@ -33,7 +33,7 @@ public class GroqService : ILlmService
         // _httpClient.DefaultRequestHeaders.Authorization será definido por request
     }
 
-    public async Task<string> GenerateResponseAsync(
+    public async Task<Chat.Minimal.IAs.Services.DTOs.ProviderResponse> GenerateResponseAsync(
         string conversationId,
         string question,
         string? systemPrompt = null,
@@ -72,9 +72,22 @@ public class GroqService : ILlmService
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             
             var response = await _httpClient.SendAsync(requestMessage, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                 // Log de falha detalhado
+                 _logger.LogWarning("Groq API Error: {StatusCode} - {Body}", response.StatusCode, responseBody);
+                 
+                 return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+                 {
+                     IsSuccess = false,
+                     StatusCode = (int)response.StatusCode,
+                     Content = responseBody, // Retorna o JSON de erro do provedor
+                     ErrorMessage = $"HTTP {response.StatusCode} {response.ReasonPhrase}"
+                 };
+            }
+
             var jsonResponse = JsonDocument.Parse(responseBody);
 
             var answer = jsonResponse.RootElement
@@ -83,12 +96,33 @@ public class GroqService : ILlmService
                 .GetProperty("content")
                 .GetString();
 
-            return answer ?? "Sem resposta";
+            // Tentar extrair tokens
+            int inputTokens = 0, outputTokens = 0;
+            if (jsonResponse.RootElement.TryGetProperty("usage", out var usage))
+            {
+               if (usage.TryGetProperty("prompt_tokens", out var pt)) inputTokens = pt.GetInt32();
+               if (usage.TryGetProperty("completion_tokens", out var ct)) outputTokens = ct.GetInt32();
+            }
+
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+            {
+                IsSuccess = true,
+                StatusCode = (int)response.StatusCode,
+                Content = answer ?? "Sem resposta",
+                InputTokens = inputTokens,
+                OutputTokens = outputTokens
+            };
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao gerar resposta com Groq");
-            return $"Erro ao conectar com Groq: {ex.Message}";
+            return new Chat.Minimal.IAs.Services.DTOs.ProviderResponse
+            {
+                IsSuccess = false,
+                StatusCode = 500,
+                ErrorMessage = ex.Message,
+                Content = ex.ToString()
+            };
         }
     }
 

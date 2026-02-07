@@ -2,7 +2,7 @@ namespace Chat.Minimal.IAs.Services.Domain.Interfaces;
 
 public interface ILlmService
 {
-    Task<string> GenerateResponseAsync(
+    Task<Chat.Minimal.IAs.Services.DTOs.ProviderResponse> GenerateResponseAsync(
         string conversationId,
         string question,
         string? systemPrompt = null,

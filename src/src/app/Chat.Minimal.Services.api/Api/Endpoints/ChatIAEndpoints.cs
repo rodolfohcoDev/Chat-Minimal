@@ -22,15 +22,16 @@ public static class ChatIAEndpoints
             ICommandDispatcher commandDispatcher,
             HttpContext context) =>
         {
-            // Opcional: Pegar ID do usuário logado se necessário
-            // var userId = context.User.Identity?.Name;
+            // Tenta pegar o ID do usuário das Claims (preenchido pelo Middleware ou JWT)
+            var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
             var conversationId = request.ConversationId ?? Guid.NewGuid().ToString();
 
             var command = new AskQuestionCommand(
                 ConversationId: conversationId,
                 Question: request.Question,
-                SystemPrompt: request.SystemPrompt
+                SystemPrompt: request.SystemPrompt,
+                UserId: userId
             );
 
             try

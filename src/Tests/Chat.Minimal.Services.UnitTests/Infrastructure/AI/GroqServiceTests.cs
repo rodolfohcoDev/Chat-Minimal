@@ -89,7 +89,7 @@ public class GroqServiceTests
         var result = await service.GenerateResponseAsync("conv-1", "test", null, config);
 
         // Assert
-        Assert.Equal("Dynamic Success", result);
+        Assert.Equal("Dynamic Success", result.Content);
     }
 
     [Fact]
@@ -130,6 +130,6 @@ public class GroqServiceTests
         var result = await service.GenerateResponseAsync("conv-1", "test");
 
         // Assert
-        Assert.Equal("Default Success", result);
+        Assert.Equal("Default Success", result.Content);
     }
 }

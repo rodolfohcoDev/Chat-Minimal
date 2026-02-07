@@ -36,8 +36,14 @@ public class AskQuestionCommandHandlerTests
             command.ConversationId,
             command.Question,
             command.SystemPrompt,
+            It.IsAny<Chat.Minimal.IAs.Services.DTOs.AiProviderConfig?>(),
             It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedAnswer);
+            .ReturnsAsync(new Chat.Minimal.IAs.Services.DTOs.ProviderResponse 
+            { 
+                Content = expectedAnswer, 
+                IsSuccess = true, 
+                StatusCode = 200 
+            });
 
         // Act
         var result = await _handler.HandleAsync(command);
@@ -51,7 +57,7 @@ public class AskQuestionCommandHandlerTests
 
         // Verify calls sequence
         _conversationServiceMock.Verify(x => x.AddQuestionAsync(command.ConversationId, command.Question), Times.Once);
-        _llmServiceMock.Verify(x => x.GenerateResponseAsync(command.ConversationId, command.Question, command.SystemPrompt, It.IsAny<CancellationToken>()), Times.Once);
+        _llmServiceMock.Verify(x => x.GenerateResponseAsync(command.ConversationId, command.Question, command.SystemPrompt, It.IsAny<Chat.Minimal.IAs.Services.DTOs.AiProviderConfig?>(), It.IsAny<CancellationToken>()), Times.Once);
         _conversationServiceMock.Verify(x => x.AddAnswerAsync(command.ConversationId, expectedAnswer), Times.Once);
     }
 
@@ -61,7 +67,7 @@ public class AskQuestionCommandHandlerTests
         // Arrange
         var command = new AskQuestionCommand("conv-error", "Fatal error");
         _llmServiceMock.Setup(x => x.GenerateResponseAsync(
-             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<Chat.Minimal.IAs.Services.DTOs.AiProviderConfig?>(), It.IsAny<CancellationToken>()))
              .ThrowsAsync(new Exception("LLM Down"));
 
         // Act & Assert
