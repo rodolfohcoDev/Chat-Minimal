@@ -45,6 +45,7 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 // Register services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<IAiOrchestrator, AiOrchestrator>();
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -60,7 +61,7 @@ builder.Services.AddCors(options =>
 // ⭐ Registrar serviços de IA (Class Library)
 builder.Services.AddIAServices(builder.Configuration);
 
-// ⭐ Substituir InMemory por Banco de Dados MySQL
+// ⭐ Substituir InMemory por Banco de Dados SQL Server
 builder.Services.AddScoped<Chat.Minimal.IAs.Services.Domain.Interfaces.IConversationMemory, Chat.Minimal.Services.Infrastructure.AI.EfConversationMemory>();
 
 var app = builder.Build();
@@ -91,17 +92,20 @@ app.UseAuthorization();
 // Apply migrations and seed test data in development
 // Commented out because migrations are applied manually via dotnet ef
 
-//if (app.Environment.IsDevelopment())
-//{
-//    using var scope = app.Services.CreateScope();
-//    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-//    // Apply migrations
-////    await context.Database.MigrateAsync();
+    // Apply migrations
+//    await context.Database.MigrateAsync();
 
-//    // Seed test API key
-//    await Chat.Minimal.Services.Scripts.SeedTestApiKey.SeedAsync(context);
-//}
+    // Seed test API key
+    await Chat.Minimal.Services.Scripts.SeedTestApiKey.SeedAsync(context);
+    
+    // Seed Groq AI configuration
+    await Chat.Minimal.Services.Scripts.SeedGroqConfig.SeedAsync(context);
+}
 
 // Map endpoints
 app.MapUserEndpoints();
