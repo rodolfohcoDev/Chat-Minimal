@@ -108,6 +108,12 @@ if (app.Environment.IsDevelopment())
     
     // Seed Groq AI configuration
     await Chat.Minimal.Services.Scripts.SeedGroqConfig.SeedAsync(context);
+    
+    // Update Groq API key (in case it changed)
+    await Chat.Minimal.Services.Scripts.UpdateGroqApiKey.UpdateAsync(context);
+    
+    // Update Groq Model (to smaller one)
+    await Chat.Minimal.Services.Scripts.UpdateGroqModel.UpdateAsync(context);
 }
 
 // Map endpoints
